@@ -1,0 +1,87 @@
+name: openspec
+base: core26
+version: '1.14.2'
+title: OpenSpec
+summary: Spec-driven development for AI coding assistants
+description: |
+  OpenSpec adds a lightweight spec layer to your project, so you and your AI
+  coding assistant agree on what to build before any code is written. It
+  sets up skills and commands for Claude Code, Cursor, Codex, GitHub Copilot
+  and 20+ other assistants, and manages proposals, specs and their archive.
+
+  **Examples**
+
+     cd ~/my-project
+     openspec init
+     openspec list
+     openspec validate --all
+     openspec archive add-dark-mode
+
+  **File access**
+
+  OpenSpec can use projects in your home directory. To also use USB drives
+  and other removable media (/media, /mnt), run:
+
+     sudo snap connect openspec:removable-media
+license: MIT
+grade: stable
+confinement: strict
+website: https://openspec.dev
+source-code: https://github.com/Fission-AI/OpenSpec
+issues: https://github.com/Fission-AI/OpenSpec/issues
+contact: https://github.com/sidalit/openspec-snap/issues
+
+platforms:
+  amd64:
+  arm64:
+  ppc64el:
+  s390x:
+
+apps:
+  openspec:
+    command: bin/openspec
+    completer: share/bash-completion/completions/openspec
+    plugs:
+      - home
+      - removable-media
+      - network
+    environment:
+      # Updates come from the snap, not from npm.
+      OPENSPEC_NO_UPDATE_CHECK: '1'
+
+parts:
+  openspec:
+    plugin: nil
+    source: https://github.com/Fission-AI/OpenSpec.git
+    source-tag: 'v1.14.2'
+    # The official Node.js build is self-contained, unlike the archive package.
+    build-snaps:
+      - node/24/stable
+    build-environment:
+      - OPENSPEC_TELEMETRY: '0'
+      - OPENSPEC_NO_UPDATE_CHECK: '1'
+    stage-packages:
+      - git
+    override-build: |
+      npm install --global --prefix "$CRAFT_PART_BUILD/.pnpm" pnpm@10.34.5
+      export PATH="$CRAFT_PART_BUILD/.pnpm/bin:$PATH"
+      # Installing runs the build (prepare script); then keep only runtime dependencies.
+      pnpm install --frozen-lockfile
+      pnpm install --frozen-lockfile --prod --ignore-scripts --config.confirmModulesPurge=false
+
+      app="$CRAFT_PART_INSTALL/lib/openspec"
+      mkdir -p "$app"
+      cp -r package.json bin dist schemas node_modules "$app/"
+      find "$app/dist" \( -name '*.map' -o -name '*.test.js' -o -name '__tests__' \) -prune -exec rm -rf {} +
+
+      mkdir -p "$CRAFT_PART_INSTALL/bin"
+      install -Dm755 /snap/node/current/bin/node "$CRAFT_PART_INSTALL/bin/node"
+      install -Dm644 /snap/node/current/LICENSE "$CRAFT_PART_INSTALL/share/doc/node/LICENSE"
+      printf '%s\n' '#!/bin/sh' 'exec "$SNAP/bin/node" "$SNAP/lib/openspec/bin/openspec.js" "$@"' \
+        > "$CRAFT_PART_INSTALL/bin/openspec"
+      chmod 755 "$CRAFT_PART_INSTALL/bin/openspec"
+
+      mkdir -p "$CRAFT_PART_INSTALL/share/bash-completion/completions"
+      node "$app/bin/openspec.js" completion generate bash \
+        > "$CRAFT_PART_INSTALL/share/bash-completion/completions/openspec"
+      install -Dm644 LICENSE "$CRAFT_PART_INSTALL/share/doc/openspec/LICENSE"
