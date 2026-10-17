@@ -1,0 +1,23 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "dependencyDashboard": true,
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Upstream release pinned by source-tag in snapcraft.yaml",
+      "managerFilePatterns": ["/(^|/)snap/snapcraft\\.yaml$/"],
+      "matchStrings": [
+        "#\\s*renovate:\\s*datasource=(?<datasource>\\S+)\\s+depName=(?<depName>\\S+)\\s*\\n\\s*source-tag:\\s*'?(?<currentValue>[^'\\s]+)'?"
+      ]
+    }
+  ],
+  "packageRules": [
+    {
+      "description": "Merge upstream release bumps once the snap builds and passes the smoke test",
+      "matchManagers": ["custom.regex"],
+      "automerge": true,
+      "automergeType": "pr"
+    }
+  ]
+}

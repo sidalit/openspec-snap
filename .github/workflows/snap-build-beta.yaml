@@ -4,6 +4,9 @@ on:
   push:
     branches: [main]
     paths: ['snap/snapcraft.yaml']
+  # Renovate version bumps must build and pass the smoke test before they merge.
+  pull_request:
+    paths: ['snap/snapcraft.yaml']
   workflow_dispatch:
 
 jobs:
@@ -40,6 +43,7 @@ jobs:
           snap run openspec --version
 
       - name: Publish to Beta
+        if: github.event_name != 'pull_request'
         uses: canonical/action-publish@v1
         env:
           SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
