@@ -52,7 +52,7 @@ parts:
     plugin: nil
     source: https://github.com/Fission-AI/OpenSpec.git
     # renovate: depName=Fission-AI/OpenSpec
-    source-tag: 'v1.14.2'
+    source-tag: 'v1.14.3'
     # The official Node.js build is self-contained, unlike the archive package.
     build-snaps:
       - node/24/stable
