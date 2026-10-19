@@ -1,6 +1,6 @@
 name: openspec
 base: core26
-version: '1.14.2'
+adopt-info: openspec
 title: OpenSpec
 summary: Spec-driven development for AI coding assistants
 description: |
@@ -34,8 +34,6 @@ contact: https://github.com/sidalit/openspec-snap/issues
 platforms:
   amd64:
   arm64:
-  ppc64el:
-  s390x:
 
 apps:
   openspec:
@@ -53,6 +51,7 @@ parts:
   openspec:
     plugin: nil
     source: https://github.com/Fission-AI/OpenSpec.git
+    # renovate: depName=Fission-AI/OpenSpec
     source-tag: 'v1.14.2'
     # The official Node.js build is self-contained, unlike the archive package.
     build-snaps:
@@ -62,12 +61,18 @@ parts:
       - OPENSPEC_NO_UPDATE_CHECK: '1'
     stage-packages:
       - git
+    override-pull: |
+      craftctl default
+      craftctl set version="$(git describe --tags --match 'v[0-9]*' | sed 's/^v//')"
     override-build: |
       npm install --global --prefix "$CRAFT_PART_BUILD/.pnpm" pnpm@10.34.5
       export PATH="$CRAFT_PART_BUILD/.pnpm/bin:$PATH"
-      # Installing runs the build (prepare script); then keep only runtime dependencies.
+      # Installing runs the upstream build through its prepare script.
       pnpm install --frozen-lockfile
-      pnpm install --frozen-lockfile --prod --ignore-scripts --config.confirmModulesPurge=false
+      # A prod install in the existing tree retains unlinked dev packages in
+      # pnpm's virtual store. Recreate it from the already populated cache.
+      rm -rf -- "$CRAFT_PART_BUILD/node_modules"
+      pnpm install --offline --frozen-lockfile --prod --ignore-scripts
 
       app="$CRAFT_PART_INSTALL/lib/openspec"
       mkdir -p "$app"
@@ -82,6 +87,6 @@ parts:
       chmod 755 "$CRAFT_PART_INSTALL/bin/openspec"
 
       mkdir -p "$CRAFT_PART_INSTALL/share/bash-completion/completions"
-      node "$app/bin/openspec.js" completion generate bash \
-        > "$CRAFT_PART_INSTALL/share/bash-completion/completions/openspec"
+      completion="$CRAFT_PART_INSTALL/share/bash-completion/completions/openspec"
+      "$CRAFT_PART_INSTALL/bin/node" "$app/bin/openspec.js" completion generate bash > "$completion"
       install -Dm644 LICENSE "$CRAFT_PART_INSTALL/share/doc/openspec/LICENSE"

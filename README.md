@@ -75,6 +75,10 @@ The update check is turned off in the snap, as updates come from the Snap Store.
 
 Change `version` and `source-tag` in `snap/snapcraft.yaml`, then rebuild.
 
+## Automation
+
+Builds, publishing, and dependency updates use [snap-automation](https://github.com/sidalit/snap-automation).
+
 ## License
 
 The packaging is MIT-licensed (see `LICENSE`). OpenSpec is MIT-licensed; Node.js, Git and the other dependencies carry their own licenses.
