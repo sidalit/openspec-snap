@@ -73,8 +73,10 @@ parts:
 
       app="$CRAFT_PART_INSTALL/lib/openspec"
       mkdir -p "$app"
-      cp -r package.json bin dist schemas node_modules "$app/"
-      find "$app/dist" \( -name '*.map' -o -name '*.test.js' -o -name '__tests__' \) -prune -exec rm -rf {} +
+      # Use upstream's published file list, keeping the locked pnpm dependencies.
+      package=$(npm pack --ignore-scripts --quiet)
+      tar -xzf "$package" --strip-components=1 -C "$app"
+      cp -a node_modules "$app/"
 
       mkdir -p "$CRAFT_PART_INSTALL/bin"
       install -Dm755 /snap/node/current/bin/node "$CRAFT_PART_INSTALL/bin/node"
