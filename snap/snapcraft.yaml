@@ -61,7 +61,8 @@ parts:
     stage-packages:
       - git
     override-build: |
-      npm install --global --prefix "$CRAFT_PART_BUILD/.pnpm" pnpm@10.34.5
+      npm install --global --prefix "$CRAFT_PART_BUILD/.pnpm" \
+        "$(node -p "require('./package.json').packageManager.split('+')[0]")"
       export PATH="$CRAFT_PART_BUILD/.pnpm/bin:$PATH"
       # Installing runs the upstream build through its prepare script.
       pnpm install --frozen-lockfile
