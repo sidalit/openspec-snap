@@ -52,9 +52,11 @@ parts:
     plugin: nil
     source: https://github.com/Fission-AI/OpenSpec.git
     source-tag: v$SNAPCRAFT_PROJECT_VERSION
-    # The official Node.js build is self-contained, unlike the archive package.
     build-snaps:
       - node/24/stable
+    build-packages:
+      - curl
+      - xz-utils
     build-environment:
       - OPENSPEC_TELEMETRY: '0'
       - OPENSPEC_NO_UPDATE_CHECK: '1'
@@ -78,9 +80,20 @@ parts:
       tar -xzf "$package" --strip-components=1 -C "$app"
       cp -a node_modules "$app/"
 
-      mkdir -p "$CRAFT_PART_INSTALL/bin"
-      install -Dm755 /snap/node/current/bin/node "$CRAFT_PART_INSTALL/bin/node"
-      install -Dm644 /snap/node/current/LICENSE "$CRAFT_PART_INSTALL/share/doc/node/LICENSE"
+      # Include the official Node runtime, without paths into the build-only snap.
+      node_version=$(node --version)
+      case "$CRAFT_ARCH_BUILD_FOR" in
+        amd64) node_arch=x64 ;;
+        arm64) node_arch=arm64 ;;
+        *) echo "Unsupported architecture: $CRAFT_ARCH_BUILD_FOR" >&2; exit 1 ;;
+      esac
+      node_dir="node-$node_version-linux-$node_arch"
+      curl --fail --location --retry 3 "https://nodejs.org/dist/$node_version/$node_dir.tar.xz" -o "$node_dir.tar.xz"
+      curl --fail --location --retry 3 "https://nodejs.org/dist/$node_version/SHASUMS256.txt" -o SHASUMS256.txt
+      sha256sum --check --ignore-missing SHASUMS256.txt
+      tar -xJf "$node_dir.tar.xz" --strip-components=1 -C "$CRAFT_PART_INSTALL" "$node_dir/bin/node"
+      mkdir -p "$CRAFT_PART_INSTALL/share/doc/node"
+      tar -xJOf "$node_dir.tar.xz" "$node_dir/LICENSE" > "$CRAFT_PART_INSTALL/share/doc/node/LICENSE"
       printf '%s\n' '#!/bin/sh' 'exec "$SNAP/bin/node" "$SNAP/lib/openspec/bin/openspec.js" "$@"' \
         > "$CRAFT_PART_INSTALL/bin/openspec"
       chmod 755 "$CRAFT_PART_INSTALL/bin/openspec"
