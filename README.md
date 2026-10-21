@@ -73,7 +73,7 @@ The update check is turned off in the snap, as updates come from the Snap Store.
 
 ## Update to a new upstream release
 
-Change `version` and `source-tag` in `snap/snapcraft.yaml`, then rebuild.
+Change `version` in `snap/snapcraft.yaml`, then rebuild.
 
 ## Automation
 

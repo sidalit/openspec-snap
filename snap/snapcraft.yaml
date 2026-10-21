@@ -1,6 +1,6 @@
 name: openspec
 base: core26
-adopt-info: openspec
+version: '1.14.3'
 title: OpenSpec
 summary: Spec-driven development for AI coding assistants
 description: |
@@ -51,8 +51,7 @@ parts:
   openspec:
     plugin: nil
     source: https://github.com/Fission-AI/OpenSpec.git
-    # renovate: depName=Fission-AI/OpenSpec
-    source-tag: 'v1.14.3'
+    source-tag: v$SNAPCRAFT_PROJECT_VERSION
     # The official Node.js build is self-contained, unlike the archive package.
     build-snaps:
       - node/24/stable
@@ -61,9 +60,6 @@ parts:
       - OPENSPEC_NO_UPDATE_CHECK: '1'
     stage-packages:
       - git
-    override-pull: |
-      craftctl default
-      craftctl set version="$(git describe --tags --match 'v[0-9]*' | sed 's/^v//')"
     override-build: |
       npm install --global --prefix "$CRAFT_PART_BUILD/.pnpm" pnpm@10.34.5
       export PATH="$CRAFT_PART_BUILD/.pnpm/bin:$PATH"
