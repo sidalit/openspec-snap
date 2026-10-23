@@ -27,8 +27,12 @@ license: MIT
 grade: stable
 confinement: strict
 website: https://openspec.dev
-source-code: https://github.com/Fission-AI/OpenSpec
-issues: https://github.com/Fission-AI/OpenSpec/issues
+source-code:
+  - https://github.com/Fission-AI/OpenSpec
+  - https://github.com/sidalit/openspec-snap
+issues:
+  - https://github.com/Fission-AI/OpenSpec/issues
+  - https://github.com/sidalit/openspec-snap/issues
 contact: https://github.com/sidalit/openspec-snap/issues
 
 platforms:
