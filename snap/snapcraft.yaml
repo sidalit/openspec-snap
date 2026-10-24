@@ -16,13 +16,6 @@ description: |
      openspec list
      openspec validate --all
      openspec archive add-dark-mode
-
-  **File access**
-
-  OpenSpec can use projects in your home directory. To also use USB drives
-  and other removable media (/media, /mnt), run:
-
-     sudo snap connect openspec:removable-media
 license: MIT
 grade: stable
 confinement: strict
@@ -48,7 +41,7 @@ apps:
       - removable-media
       - network
     environment:
-      # Updates come from the snap, not from npm.
+      # Updates come from the Snap Store.
       OPENSPEC_NO_UPDATE_CHECK: '1'
 
 parts:
@@ -60,49 +53,33 @@ parts:
       - node/24/stable
     build-packages:
       - curl
-      - xz-utils
     build-environment:
       - OPENSPEC_TELEMETRY: '0'
       - OPENSPEC_NO_UPDATE_CHECK: '1'
     stage-packages:
       - git
     override-build: |
-      npm install --global --prefix "$CRAFT_PART_BUILD/.pnpm" \
+      # Match the Bun compiler used by upstream's binary build workflow.
+      bun_version=1.4.3
+      npm install --global --prefix "$CRAFT_PART_BUILD/.tools" "bun@$bun_version" \
         "$(node -p "require('./package.json').packageManager.split('+')[0]")"
-      export PATH="$CRAFT_PART_BUILD/.pnpm/bin:$PATH"
+      export PATH="$CRAFT_PART_BUILD/.tools/bin:$PATH"
       # Installing runs the upstream build through its prepare script.
       pnpm install --frozen-lockfile
-      # A prod install in the existing tree retains unlinked dev packages in
-      # pnpm's virtual store. Recreate it from the already populated cache.
-      rm -rf -- "$CRAFT_PART_BUILD/node_modules"
-      pnpm install --offline --frozen-lockfile --prod --ignore-scripts
-
-      app="$CRAFT_PART_INSTALL/lib/openspec"
-      mkdir -p "$app"
-      # Use upstream's published file list, keeping the locked pnpm dependencies.
-      package=$(npm pack --ignore-scripts --quiet)
-      tar -xzf "$package" --strip-components=1 -C "$app"
-      cp -a node_modules "$app/"
-
-      # Include the official Node runtime, without paths into the build-only snap.
-      node_version=$(node --version)
-      case "$CRAFT_ARCH_BUILD_FOR" in
-        amd64) node_arch=x64 ;;
-        arm64) node_arch=arm64 ;;
-        *) echo "Unsupported architecture: $CRAFT_ARCH_BUILD_FOR" >&2; exit 1 ;;
-      esac
-      node_dir="node-$node_version-linux-$node_arch"
-      curl --fail --location --retry 3 "https://nodejs.org/dist/$node_version/$node_dir.tar.xz" -o "$node_dir.tar.xz"
-      curl --fail --location --retry 3 "https://nodejs.org/dist/$node_version/SHASUMS256.txt" -o SHASUMS256.txt
-      sha256sum --check --ignore-missing SHASUMS256.txt
-      tar -xJf "$node_dir.tar.xz" --strip-components=1 -C "$CRAFT_PART_INSTALL" "$node_dir/bin/node"
-      mkdir -p "$CRAFT_PART_INSTALL/share/doc/node"
-      tar -xJOf "$node_dir.tar.xz" "$node_dir/LICENSE" > "$CRAFT_PART_INSTALL/share/doc/node/LICENSE"
-      printf '%s\n' '#!/bin/sh' 'exec "$SNAP/bin/node" "$SNAP/lib/openspec/bin/openspec.js" "$@"' \
-        > "$CRAFT_PART_INSTALL/bin/openspec"
-      chmod 755 "$CRAFT_PART_INSTALL/bin/openspec"
+      bun scripts/binary/build.mjs
+      install -Dm755 "dist-bin/openspec-linux-$(node -p process.arch)" \
+        "$CRAFT_PART_INSTALL/bin/openspec"
 
       mkdir -p "$CRAFT_PART_INSTALL/share/bash-completion/completions"
       completion="$CRAFT_PART_INSTALL/share/bash-completion/completions/openspec"
-      "$CRAFT_PART_INSTALL/bin/node" "$app/bin/openspec.js" completion generate bash > "$completion"
+      node bin/openspec.js completion generate bash > "$completion"
       install -Dm644 LICENSE "$CRAFT_PART_INSTALL/share/doc/openspec/LICENSE"
+      # Bundled dependencies still need their license and notice files.
+      notices="$CRAFT_PART_INSTALL/share/doc/openspec/dependencies"
+      mkdir -p "$notices"
+      find node_modules/.pnpm -type f \( -iname 'license*' -o -iname 'licence*' \
+        -o -iname 'copying*' -o -iname 'notice*' \) -exec cp --parents -t "$notices" {} +
+      mkdir -p "$CRAFT_PART_INSTALL/share/doc/bun"
+      curl --fail --location --retry 3 \
+        "https://raw.githubusercontent.com/oven-sh/bun/bun-v$bun_version/LICENSE.md" \
+        -o "$CRAFT_PART_INSTALL/share/doc/bun/LICENSE.md"

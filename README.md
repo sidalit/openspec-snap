@@ -17,7 +17,7 @@ snapcraft pack
 <a href="https://snapcraft.io/openspec"><img alt="Get it from the Snap Store" src="https://snapcraft.io/en/dark/install.svg" width="180"></a>
 
 ```bash
-sudo snap install openspec                   # or a local build: ./openspec_1.14.2_*.snap --dangerous
+sudo snap install openspec                   # or a local build: ./openspec_<version>_*.snap --dangerous
 sudo snap connect openspec:removable-media   # optional: /media, /mnt
 cd ~/my-project
 openspec init --tools claude,cursor
@@ -25,8 +25,6 @@ openspec new change add-dark-mode
 openspec validate add-dark-mode
 openspec archive add-dark-mode
 ```
-
-The snap includes Node.js and Git, so nothing else needs to be installed.
 
 ## Known limitations
 
@@ -69,7 +67,8 @@ OpenSpec sends anonymous usage statistics by default. To turn them off:
 openspec config set telemetry.enabled false
 ```
 
-The update check is turned off in the snap, as updates come from the Snap Store.
+The update check is turned off in the snap.
+Update with `sudo snap refresh openspec`; `openspec install` cannot replace files inside the snap.
 
 ## Update to a new upstream release
 
@@ -81,4 +80,4 @@ Builds, publishing, and dependency updates use [snap-automation](https://github.
 
 ## License
 
-The packaging is MIT-licensed (see `LICENSE`). OpenSpec is MIT-licensed; Node.js, Git and the other dependencies carry their own licenses.
+The packaging is MIT-licensed (see `LICENSE`). OpenSpec is MIT-licensed; the embedded Bun runtime, Git and the other dependencies carry their own licenses.
