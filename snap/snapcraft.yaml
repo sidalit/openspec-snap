@@ -1,6 +1,6 @@
 name: openspec
 base: core26
-version: '1.14.3'
+version: '1.15.0'
 title: OpenSpec
 summary: Spec-driven development for AI coding assistants
 description: |
