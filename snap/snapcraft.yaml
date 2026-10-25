@@ -2,6 +2,7 @@ name: openspec
 base: core26
 version: '1.15.0'
 title: OpenSpec
+icon: snap/gui/openspec.png
 summary: Spec-driven development for AI coding assistants
 description: |
   OpenSpec adds a lightweight spec layer to your project, so you and your AI
