@@ -46,25 +46,48 @@ apps:
       OPENSPEC_NO_UPDATE_CHECK: '1'
 
 parts:
+  bun:
+    plugin: nil
+    build-snaps:
+      - node/24/stable
+    build-packages:
+      - curl
+    override-build: |
+      # Match the Bun compiler used by upstream's binary build workflow.
+      bun_version=1.4.3
+      npm install --global --prefix "$CRAFT_PART_INSTALL" "bun@$bun_version"
+      mkdir -p "$CRAFT_PART_INSTALL/share/doc/bun"
+      curl --fail --location --retry 3 \
+        "https://raw.githubusercontent.com/oven-sh/bun/bun-v$bun_version/LICENSE.md" \
+        -o "$CRAFT_PART_INSTALL/share/doc/bun/LICENSE.md"
+    prime:
+      - share/doc/bun/LICENSE.md
+
+  pnpm:
+    plugin: nil
+    build-snaps:
+      - node/24/stable
+    override-build: |
+      # Corepack selects the pnpm version from upstream's packageManager field.
+      npm install --global --prefix "$CRAFT_PART_INSTALL" corepack@0.36.0
+    prime:
+      - -*
+
   openspec:
+    after: [bun, pnpm]
     plugin: nil
     source: https://github.com/Fission-AI/OpenSpec.git
     source-tag: v$SNAPCRAFT_PROJECT_VERSION
     build-snaps:
       - node/24/stable
-    build-packages:
-      - curl
     build-environment:
+      - COREPACK_ENABLE_DOWNLOAD_PROMPT: '0'
       - OPENSPEC_TELEMETRY: '0'
       - OPENSPEC_NO_UPDATE_CHECK: '1'
     stage-packages:
       - git
     override-build: |
-      # Match the Bun compiler used by upstream's binary build workflow.
-      bun_version=1.4.3
-      npm install --global --prefix "$CRAFT_PART_BUILD/.tools" "bun@$bun_version" \
-        "$(node -p "require('./package.json').packageManager.split('+')[0]")"
-      export PATH="$CRAFT_PART_BUILD/.tools/bin:$PATH"
+      export PATH="$CRAFT_STAGE/bin:$PATH"
       # Installing runs the upstream build through its prepare script.
       pnpm install --frozen-lockfile
       bun scripts/binary/build.mjs
@@ -80,7 +103,3 @@ parts:
       mkdir -p "$notices"
       find node_modules/.pnpm -type f \( -iname 'license*' -o -iname 'licence*' \
         -o -iname 'copying*' -o -iname 'notice*' \) -exec cp --parents -t "$notices" {} +
-      mkdir -p "$CRAFT_PART_INSTALL/share/doc/bun"
-      curl --fail --location --retry 3 \
-        "https://raw.githubusercontent.com/oven-sh/bun/bun-v$bun_version/LICENSE.md" \
-        -o "$CRAFT_PART_INSTALL/share/doc/bun/LICENSE.md"
