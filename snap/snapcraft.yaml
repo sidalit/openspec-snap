@@ -44,6 +44,7 @@ apps:
     environment:
       # Updates come from the Snap Store.
       OPENSPEC_NO_UPDATE_CHECK: '1'
+      GIT_TEMPLATE_DIR: ''
 
 parts:
   bun:
@@ -84,8 +85,6 @@ parts:
       - COREPACK_ENABLE_DOWNLOAD_PROMPT: '0'
       - OPENSPEC_TELEMETRY: '0'
       - OPENSPEC_NO_UPDATE_CHECK: '1'
-    stage-packages:
-      - git
     override-build: |
       export PATH="$CRAFT_STAGE/bin:$PATH"
       # Installing runs the upstream build through its prepare script.
@@ -103,3 +102,12 @@ parts:
       mkdir -p "$notices"
       find node_modules/.pnpm -type f \( -iname 'license*' -o -iname 'licence*' \
         -o -iname 'copying*' -o -iname 'notice*' \) -exec cp --parents -t "$notices" {} +
+
+  git:
+    plugin: nil
+    build-attributes: [enable-patchelf]
+    stage-slices:
+      - git_bins
+    stage:
+      - -lib
+      - -lib64
