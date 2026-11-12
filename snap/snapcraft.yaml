@@ -45,6 +45,8 @@ apps:
       # Updates come from the Snap Store.
       OPENSPEC_NO_UPDATE_CHECK: '1'
       GIT_TEMPLATE_DIR: ''
+      XDG_CONFIG_HOME: $SNAP_USER_DATA/.config
+      XDG_DATA_HOME: $SNAP_USER_DATA/.local/share
 
 parts:
   bun:
